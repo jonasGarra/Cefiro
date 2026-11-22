@@ -1,11 +1,24 @@
 <p align="center">
-  <img src="src/Cefiro.App/Assets/cefiro-256.png" width="120" alt="Logotipo de Céfiro" />
+  <img src="docs/banner.png" alt="Céfiro: ventiladores e iluminación RGB para Windows" />
 </p>
 
-<h1 align="center">Céfiro</h1>
+<p align="center">
+  <a href="https://github.com/jonasGarra/Cefiro/releases/latest"><img src="https://img.shields.io/github/v/release/jonasGarra/Cefiro?label=versi%C3%B3n&color=00b8cc" alt="Versión" /></a>
+  <a href="https://github.com/jonasGarra/Cefiro/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jonasGarra/Cefiro/ci.yml?branch=main&label=pruebas" alt="Pruebas" /></a>
+  <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows" alt="Windows 10 y 11" />
+  <img src="https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet" alt=".NET 10" />
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/jonasGarra/Cefiro?label=licencia&color=7c4dff" alt="Licencia" /></a>
+</p>
 
 <p align="center"><b>Ventiladores e iluminación RGB para tu PC, con seguridad para tu líquida.</b><br/>
 Windows 11 · .NET 10 · LibreHardwareMonitor + PawnIO · OpenRGB 1.x</p>
+
+<p align="center">
+  <a href="https://github.com/jonasGarra/Cefiro/releases/latest"><b>⬇️ Descargar el instalador</b></a> ·
+  <a href="#instalación">Instalación</a> ·
+  <a href="#seguridad-del-hardware">Seguridad</a> ·
+  <a href="#compilar-desde-el-código">Compilar</a>
+</p>
 
 ---
 
@@ -17,18 +30,18 @@ y la **interfaz** solo muestra y cambia ajustes: no necesita permisos de adminis
 
 | | |
 |---|---|
-| **Panel** | Temperatura, uso, frecuencia y consumo de CPU y GPU, RAM, VRM y chipset, RPM de cada ventilador y de la bomba. Medidores animados, historial de 60 s / 10 min / 1 h y un esquema de tu caja con los ventiladores girando a su velocidad real y los LEDs con su color actual. |
+| **Panel** | Temperatura, uso, frecuencia y consumo de CPU y GPU, RAM, VRM y chipset, RPM de cada ventilador y de la bomba. Medidores animados, historial de 60 s / 10 min / 1 h y un esquema de la caja con los ventiladores girando a su velocidad real y los LEDs con su color actual. |
 | **Ventiladores** | Modos rápidos (Silencioso, Equilibrado, Rendimiento, Máximo, todo en BIOS). Por cada salida: nombre, modo BIOS / fijo / curva, editor de curva con puntos arrastrables y la temperatura en directo, temperatura de referencia (CPU, GPU, VRM, caja, la más alta o la media), histéresis, suavizado de subida y bajada, mínimo, empujón de arranque, parada a 0 RPM (solo caja), grupos y calibración automática. |
 | **Iluminación** | Vista previa en directo de cada zona y LED. Estático, respiración, arcoíris, ola, ciclo de color, cometa, temperatura, música (sonido del PC) y los modos propios de cada dispositivo. Por dispositivo, zona o LED; rueda de color, HEX y favoritos; brillo y velocidad generales; sincronizar todo con un clic; modo noche (apagar o atenuar por horario). |
 | **Perfiles** | Ventiladores y luces guardados juntos. Se activan desde la app, desde el icono de la bandeja, con un atajo de teclado global o al abrir un programa (y al cerrarlo vuelve lo que tenías). Importar y exportar en JSON. |
 | **Avisos** | Notificaciones de Windows si la CPU o la GPU se calientan demasiado, si un ventilador o la bomba se paran, si se pierde un sensor o si salta el modo de emergencia. |
-| **Ajustes** | Color de acento (o que siga a las luces del PC), °C / °F, inicio con Windows, bandeja, cómo está montado tu PC, programas que interfieren, estado del servicio y registros. |
+| **Ajustes** | Color de acento (o que siga a las luces del PC), °C / °F, inicio con Windows, bandeja, cómo está montado el PC, programas que interfieren, estado del servicio y registros. |
 
 ### Capturas
 
-| Panel (tu PC) | Ventiladores |
+| Panel (datos reales) | Ventiladores |
 |---|---|
-| ![Panel con los datos reales de tu PC](docs/capturas/panel.png) | ![Ventiladores en modo Equilibrado](docs/capturas/ventiladores.png) |
+| ![Panel con datos reales](docs/capturas/panel.png) | ![Ventiladores en modo Equilibrado](docs/capturas/ventiladores.png) |
 | **Editor de curva** | **Iluminación por zona** |
 | ![Editor de curva con el mínimo de seguridad de la bomba](docs/capturas/curva.png) | ![Iluminación con efectos distintos por zona y dispositivo](docs/capturas/iluminacion.png) |
 
@@ -37,7 +50,7 @@ y la **interfaz** solo muestra y cambia ajustes: no necesita permisos de adminis
 Estas reglas están en el servicio y **ningún ajuste, perfil importado o error de la interfaz puede saltárselas**:
 
 - **Bomba**: nunca por debajo del **60 %** y nunca parada. Si una salida gira como una bomba (más de 2300 RPM con poca señal), se protege como bomba aunque se diga otra cosa.
-- **Radiador**: nunca por debajo del **30 %**. **Gráfica**: nunca por debajo del mínimo de la tarjeta (30 % en tu RTX 5070).
+- **Radiador**: nunca por debajo del **30 %**. **Gráfica**: nunca por debajo del mínimo de la tarjeta (30 % en una RTX 5070).
 - **Modo de emergencia**: si la CPU llega a **90 °C** o la GPU a **85 °C** (configurable), todos los ventiladores al 100 % hasta que bajen 8 °C durante 15 s.
 - **Sensores**: si deja de leerse la temperatura de la CPU durante 3 s (configurable), **todos** los ventiladores vuelven a la BIOS;
   si falla solo la temperatura que sigue un ventilador, ese ventilador vuelve a la BIOS.
@@ -46,9 +59,9 @@ Estas reglas están en el servicio y **ningún ajuste, perfil importado o error 
 
 Por eso la **curva de la BIOS tiene que ser segura por sí sola** (ver «Ajustes de la BIOS»).
 
-## Compatibilidad con tu PC
+## Compatibilidad (PC de referencia)
 
-Comprobada en tu equipo (detalles y pruebas en [`docs/COMPATIBILIDAD.md`](docs/COMPATIBILIDAD.md)):
+Céfiro funciona con lo que soportan LibreHardwareMonitor y OpenRGB. Este es el PC en el que se ha desarrollado y probado (detalles y pruebas en [`docs/COMPATIBILIDAD.md`](docs/COMPATIBILIDAD.md)):
 
 | Componente | Leer | Ventiladores | RGB |
 |---|---|---|---|
@@ -67,7 +80,7 @@ controlar por separado (todos giran igual y repiten los mismos 8 LEDs).
 1. **Windows 11 x64** (o Windows 10 22H2).
 2. **PawnIO** (driver firmado que usa LibreHardwareMonitor para hablar con la placa): <https://pawnio.eu>. Sin él no hay lecturas ni control de los ventiladores de la placa.
 3. **OpenRGB 1.x** con el **servidor SDK** activo en el puerto **6742** y arrancando con Windows: <https://openrgb.org>.
-   En tu PC ya está instalado como servicio («OpenRGB»). Si lo instalas de nuevo: en OpenRGB, pestaña *Settings*, marca
+   Puede ir como servicio de Windows o como programa: en OpenRGB, pestaña *Settings*, marca
    *Start at login*, *Start minimized* y *Start server*. Céfiro se reconecta solo si OpenRGB se reinicia.
 4. **Nada más mandando sobre las luces o los ventiladores**: cierra o desinstala iCUE, el módulo **Mystic Light de MSI Center**,
    Armoury Crate, SignalRGB o L-Connect, y apaga la **iluminación dinámica de Windows**
@@ -82,7 +95,7 @@ En *Hardware Monitor* (pulsa **F7** para el modo avanzado):
 - **Modo de los conectores**: pon **PWM** en CPU_FAN1, PUMP_FAN1 y SYS_FAN4 (los RS120 y la bomba son de 4 pines).
   «Auto» también sirve si la BIOS detecta bien el tipo.
 - **Curvas de la BIOS seguras**, porque son las que mandan cuando Céfiro está en modo BIOS o no está en marcha:
-  - **CPU_FAN1 (la bomba en tu PC)**: que nunca baje del **60 %**; lo más seguro es dejarla al **100 %** fijo (desactiva *Smart Fan Mode* en ese conector).
+  - **CPU_FAN1 (donde va la bomba en el PC de referencia)**: que nunca baje del **60 %**; lo más seguro es dejarla al **100 %** fijo (desactiva *Smart Fan Mode* en ese conector).
     Lo ideal sería conectar la bomba a **PUMP_FAN1** (va al 100 % por defecto) y los ventiladores del radiador a CPU_FAN1;
     Céfiro detecta el cambio solo.
   - **PUMP_FAN1 (el radiador)** y **SYS_FAN4 (la caja)**: una curva normal por temperatura de la CPU.
@@ -90,7 +103,7 @@ En *Hardware Monitor* (pulsa **F7** para el modo avanzado):
 
 ## Instalación
 
-1. Ejecuta **`Cefiro-Setup-1.0.0.exe`**. Como no está firmado, Windows SmartScreen puede avisar:
+1. Descarga **`Cefiro-Setup-1.0.1.exe`** de [Releases](https://github.com/jonasGarra/Cefiro/releases/latest) y ejecútalo. Como no está firmado, Windows SmartScreen puede avisar:
    *Más información › Ejecutar de todas formas*.
 2. La primera página comprueba PawnIO, OpenRGB y los programas que pueden interferir.
 3. Se instala en `C:\Program Files\Cefiro`:
@@ -99,7 +112,7 @@ En *Hardware Monitor* (pulsa **F7** para el modo avanzado):
    - `cefiro-cli.exe` para diagnóstico.
 4. Al terminar se abre Céfiro. Los ventiladores empiezan en **modo BIOS**: no cambia nada hasta que elijas un modo.
 
-Instalación desatendida: `Cefiro-Setup-1.0.0.exe /SILENT` (sin abrir la app al terminar).
+Instalación desatendida: `Cefiro-Setup-1.0.1.exe /SILENT` (sin abrir la app al terminar).
 
 **Desinstalar**: *Configuración › Aplicaciones › Céfiro*. El servicio se detiene (los ventiladores vuelven a la BIOS)
 y se borra; tu configuración se queda en `%ProgramData%\Cefiro` por si vuelves a instalarlo.
@@ -129,7 +142,7 @@ el servicio corre en otra sesión de Windows y no puede oír el sonido ni el tec
 `fans`, `watch-fans`, `fan`, `preset`, `calibrate`, `safety`, `lights`, `light`, `zone`, `identify`, `pattern`,
 `music`, `audio-selftest` y `all-bios` (devuelve todos los ventiladores a la BIOS al momento).
 
-## Rendimiento medido en tu PC
+## Rendimiento medido
 
 | | CPU (del total) | Memoria |
 |---|---|---|
@@ -165,7 +178,7 @@ dotnet test --solution Cefiro.slnx
 | `Cefiro.Service` | Servicio de Windows (registros con Serilog). |
 | `Cefiro.App` | Interfaz WPF (WPF-UI, LiveCharts2, H.NotifyIcon, CommunityToolkit.Mvvm). |
 | `Cefiro.Audio` | Captura del sonido del PC (WASAPI loopback) y espectro para el efecto Música. |
-| `Cefiro.Demo` | Hardware simulado con la forma de tu PC. |
+| `Cefiro.Demo` | Hardware simulado con la forma del PC de referencia. |
 | `tools/` | `cefiro-cli`, `Cefiro.HwProbe` (diagnóstico del hardware) y `Cefiro.IconGen` (genera el icono). |
 | `tests/` | Pruebas: curvas, histéresis, emergencia, IPC, OpenRGB, iluminación, audio y perfiles. |
 
@@ -184,3 +197,11 @@ dotnet test --solution Cefiro.slnx
 [WPF-UI](https://github.com/lepoco/wpfui), [LiveCharts2](https://github.com/beto-rodriguez/LiveCharts2),
 [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet), [H.NotifyIcon](https://github.com/HavenDV/H.NotifyIcon),
 [NAudio](https://github.com/naudio/NAudio) (MIT) y [Serilog](https://serilog.net) (Apache 2.0).
+
+## Licencia
+
+Código bajo licencia [MIT](LICENSE). Céfiro no incluye OpenRGB ni PawnIO: se instalan aparte y cada uno tiene su propia licencia.
+Céfiro no está afiliado a Corsair, MSI, NVIDIA ni AMD; las marcas citadas son de sus respectivos dueños.
+
+> ⚠️ Controlar ventiladores y bombas tiene riesgos. Céfiro aplica límites de seguridad estrictos, pero lo usas bajo tu responsabilidad:
+> revisa que la curva de la BIOS sea segura antes de nada.

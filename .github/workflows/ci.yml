@@ -1,0 +1,26 @@
+name: Compilación y pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows · .NET 10
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Compilar
+        run: dotnet build Cefiro.slnx -c Release -warnaserror -nologo
+
+      - name: Pruebas
+        run: dotnet test --solution Cefiro.slnx -c Release --no-build
