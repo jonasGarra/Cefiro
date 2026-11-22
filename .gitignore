@@ -1,0 +1,26 @@
+# Compilación
+bin/
+obj/
+artifacts/
+publish/
+TestResults/
+*.binlog
+
+# Instalador generado
+installer/Output/
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.DotSettings.user
+
+# Diagnósticos locales (contienen números de serie del hardware)
+hwprobe-*.txt
+hwprobe-*.json
+
+# Sistema
+Thumbs.db
+desktop.ini

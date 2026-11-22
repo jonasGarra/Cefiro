@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Cefiro.Ipc</RootNamespace>
+    <Description>Contratos (DTO) y transporte por named pipe entre el servicio de Céfiro y la interfaz.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cefiro.Core.Tests" />
+  </ItemGroup>
+
+</Project>

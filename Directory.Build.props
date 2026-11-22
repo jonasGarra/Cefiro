@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <Company>Céfiro</Company>
+    <Product>Céfiro</Product>
+    <Copyright>© 2026 Céfiro</Copyright>
+    <Version>0.1.0</Version>
+    <NeutralLanguage>es-ES</NeutralLanguage>
+    <SatelliteResourceLanguages>es</SatelliteResourceLanguages>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- Avisos que no aportan en este proyecto -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+</Project>

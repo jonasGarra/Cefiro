@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Cefiro.OpenRgb</RootNamespace>
+    <Description>Cliente del SDK de red de OpenRGB (protocolos 0 a 6) escrito a partir de Documentation/OpenRGBSDK.md y del código de OpenRGB 1.1.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cefiro.OpenRgb.Tests" />
+  </ItemGroup>
+
+</Project>
