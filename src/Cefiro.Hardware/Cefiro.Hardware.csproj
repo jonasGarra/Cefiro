@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Cefiro.Hardware</RootNamespace>
+    <Description>Acceso al hardware real: LibreHardwareMonitor (sensores y ventiladores) y OpenRGB (iluminación).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cefiro.Core\Cefiro.Core.csproj" />
+    <ProjectReference Include="..\Cefiro.OpenRgb\Cefiro.OpenRgb.csproj" />
+  </ItemGroup>
+
+</Project>

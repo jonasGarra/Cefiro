@@ -1,11 +1,18 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Cefiro.Core/Cefiro.Core.csproj" />
+    <Project Path="src/Cefiro.Demo/Cefiro.Demo.csproj" />
+    <Project Path="src/Cefiro.Hardware/Cefiro.Hardware.csproj" />
+    <Project Path="src/Cefiro.Ipc/Cefiro.Ipc.csproj" />
     <Project Path="src/Cefiro.OpenRgb/Cefiro.OpenRgb.csproj" />
+    <Project Path="src/Cefiro.Service/Cefiro.Service.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Cefiro.Core.Tests/Cefiro.Core.Tests.csproj" />
     <Project Path="tests/Cefiro.OpenRgb.Tests/Cefiro.OpenRgb.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Cefiro.Cli/Cefiro.Cli.csproj" />
     <Project Path="tools/Cefiro.HwProbe/Cefiro.HwProbe.csproj" />
   </Folder>
 </Solution>

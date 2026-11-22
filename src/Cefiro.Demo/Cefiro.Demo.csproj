@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Cefiro.Demo</RootNamespace>
+    <Description>Hardware simulado para el modo --demo. Nunca toca hardware real.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cefiro.Core\Cefiro.Core.csproj" />
+  </ItemGroup>
+
+</Project>

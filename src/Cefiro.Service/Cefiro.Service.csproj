@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Cefiro.Service</RootNamespace>
+    <AssemblyName>Cefiro.Service</AssemblyName>
+    <Description>Servicio de Windows de Céfiro: controla el hardware aunque la ventana esté cerrada.</Description>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cefiro.Core\Cefiro.Core.csproj" />
+    <ProjectReference Include="..\Cefiro.Hardware\Cefiro.Hardware.csproj" />
+    <ProjectReference Include="..\Cefiro.Demo\Cefiro.Demo.csproj" />
+  </ItemGroup>
+
+</Project>

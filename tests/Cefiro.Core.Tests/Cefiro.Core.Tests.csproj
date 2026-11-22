@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Cefiro.Core\Cefiro.Core.csproj" />
+    <ProjectReference Include="..\..\src\Cefiro.Ipc\Cefiro.Ipc.csproj" />
+    <ProjectReference Include="..\..\src\Cefiro.Demo\Cefiro.Demo.csproj" />
+  </ItemGroup>
+
+</Project>
