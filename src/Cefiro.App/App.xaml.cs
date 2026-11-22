@@ -249,11 +249,15 @@ public partial class App : Application
         Directory.CreateDirectory(directory);
         await Task.Delay(6000); // que se llenen gráficas y medidores
 
-        var pages = new[]
-        {
-            "panel", "panel-abajo", "ventiladores", "ventiladores-abajo", "ventiladores-editor", "ventiladores-equilibrado",
-            "iluminacion", "iluminacion-abajo", "iluminacion-zonas", "sensores", "perfiles", "ajustes",
-        };
+        // Las pruebas que cambian ajustes (modo rápido, efectos por zona, perfiles) solo en modo demo:
+        // una captura del PC real nunca toca el hardware.
+        var pages = _session!.IsDemo
+            ? new[]
+            {
+                "panel", "panel-abajo", "ventiladores", "ventiladores-abajo", "ventiladores-editor", "ventiladores-equilibrado",
+                "iluminacion", "iluminacion-abajo", "iluminacion-zonas", "sensores", "perfiles", "ajustes",
+            }
+            : new[] { "panel", "panel-abajo", "ventiladores", "ventiladores-abajo", "iluminacion", "iluminacion-abajo", "sensores", "ajustes" };
         for (var i = 0; i < pages.Length; i++)
         {
             var page = pages[i];
