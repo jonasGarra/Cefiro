@@ -314,6 +314,10 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
         var snapshot = (float?[])_values.Clone();
         _sensorSnapshot = snapshot;
 
+        // La vista previa de los LEDs solo se calcula si hay alguien mirando.
+        if (_lightingEngine is { } lighting)
+            lighting.PreviewEnabled = HasListeners();
+
         if (HasListeners())
         {
             Publish(Events.Sensors, new SensorFrameDto(_catalog?.Version ?? 0, timestamp, snapshot));

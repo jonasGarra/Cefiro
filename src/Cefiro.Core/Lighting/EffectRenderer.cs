@@ -173,8 +173,8 @@ public static class EffectRenderer
 
         if (bands is null || bands.Length == 0)
         {
-            // Sin audio: respiración suave para que se vea que el efecto está vivo.
-            var idle = 0.06 + 0.06 * (1 + Math.Sin(ctx.Time * 1.5)) / 2;
+            // Sin audio: respiración lenta y visible ("esperando música"), para que no parezca parado.
+            var idle = 0.08 + 0.22 * (1 + Math.Sin(ctx.Time * 1.2)) / 2;
             for (var i = 0; i < leds.Length; i++)
                 leds[i] = Rgb.Gradient(palette, (double)i / Math.Max(1, leds.Length - 1)).Scale(idle);
             return;

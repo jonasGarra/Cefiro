@@ -6,7 +6,11 @@ namespace Cefiro.Core.Lighting;
 /// <summary>Comprueba y corrige la configuración de iluminación antes de usarla o guardarla.</summary>
 public static class LightingValidator
 {
-    public const int DefaultResizableZoneLeds = 48;
+    /// <summary>
+    /// LEDs por defecto de un cabezal ARGB sin configurar. Los ventiladores RS de Corsair van en paralelo
+    /// (cada ventilador repite los mismos 8 LEDs), comprobado en tu PC en la Fase 3: 8 es lo correcto.
+    /// </summary>
+    public const int DefaultResizableZoneLeds = 8;
 
     public static LightingSettingsDto Validate(LightingSettingsDto? input, IReadOnlySet<string> temperatureSensorIds)
     {

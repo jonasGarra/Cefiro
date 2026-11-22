@@ -108,7 +108,9 @@ public sealed class LightingEngine : IAsyncDisposable
                 var count = Math.Clamp(request.LedCount, zone.MinLeds, zone.MaxLeds);
                 await _backend.ResizeZoneAsync(device, zone.Index, count, ct).ConfigureAwait(false);
                 ZoneResized?.Invoke(new ZoneSizeDto(device.Key, zone.Index, count));
-                _devicesDirty = true;
+
+                // Se relee la lista antes de responder, para que quien pregunta vea ya el tamaño nuevo.
+                await RefreshDevicesAsync(ct).ConfigureAwait(false);
                 done.TrySetResult();
             }
             catch (Exception ex)
@@ -256,8 +258,21 @@ public sealed class LightingEngine : IAsyncDisposable
             _states.Remove(gone);
         foreach (var d in devices)
         {
-            if (_states.TryGetValue(d.Key, out var st) && st.LedCount != d.LedCount)
+            if (!_states.TryGetValue(d.Key, out var st))
+                continue;
+
+            if (st.LedCount != d.LedCount)
+            {
                 _states.Remove(d.Key);
+                continue;
+            }
+
+            // Tras una redetección (o un reinicio de OpenRGB) el dispositivo puede haber vuelto a su modo
+            // por defecto: se vuelve a aplicar el modo y se reenvían los colores.
+            st.Direct = false;
+            st.NativeSignature = null;
+            st.LastSent = null;
+            st.RetryAfter = 0;
         }
 
         _devices = devices;
@@ -596,8 +611,8 @@ public sealed class LightingEngine : IAsyncDisposable
 public static class LightingEngineDefaults
 {
     /// <summary>
-    /// LEDs que se asignan a un cabezal ARGB que está a 0 y nunca se ha configurado. 48 cubre las dos
-    /// cadenas de tu PC (líquida: bomba 8 + 3 × 8 = 32; caja: 6 × 8 = 48). Se ajusta desde la interfaz.
+    /// LEDs que se asignan a un cabezal ARGB que está a 0 y nunca se ha configurado. En tu PC las dos
+    /// cadenas (caja y líquida) están en paralelo y cada pieza repite 8 LEDs. Se ajusta desde la interfaz.
     /// </summary>
     public static int ResizableZoneLeds { get; set; } = LightingValidator.DefaultResizableZoneLeds;
 }

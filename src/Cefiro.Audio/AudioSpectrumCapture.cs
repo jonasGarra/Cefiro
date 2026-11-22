@@ -19,9 +19,27 @@ public sealed class AudioSpectrumCapture : IDisposable
     private readonly double _interval;
     private WasapiLoopbackCapture? _capture;
     private SpectrumAnalyzer? _analyzer;
+    private readonly object _analyzerGate = new();
     private double _lastEmit;
-    private bool _running;
+    private double _lastData;
+    private volatile bool _running;
     private Timer? _restartTimer;
+    private Timer? _emitTimer;
+    private long _callbacks;
+    private long _frames;
+    private double _firstCallback = -1;
+    private double _lastCallback;
+
+    /// <summary>Datos de diagnóstico de la captura (llamadas, frecuencia, formato).</summary>
+    public string Diagnostics
+    {
+        get
+        {
+            var span = _lastCallback - _firstCallback;
+            var rate = span > 0 ? (_callbacks - 1) / span : 0;
+            return $"{_callbacks} bloques de audio ({rate:0.0}/s), {_frames} muestras, formato {_capture?.WaveFormat?.ToString() ?? "—"}";
+        }
+    }
 
     public AudioSpectrumCapture(int framesPerSecond = 30)
     {
@@ -43,6 +61,8 @@ public sealed class AudioSpectrumCapture : IDisposable
                 return;
             _running = true;
             StartCapture();
+            var period = TimeSpan.FromSeconds(_interval);
+            _emitTimer = new Timer(OnEmitTimer, null, period, period);
         }
     }
 
@@ -78,6 +98,13 @@ public sealed class AudioSpectrumCapture : IDisposable
         if (frames <= 0)
             return;
 
+        var callbackTime = _clock.Elapsed.TotalSeconds;
+        if (_firstCallback < 0)
+            _firstCallback = callbackTime;
+        _lastCallback = callbackTime;
+        _callbacks++;
+        _frames += frames;
+
         var mono = new float[frames];
         var isFloat = format.Encoding == WaveFormatEncoding.IeeeFloat
                       || (format.Encoding == WaveFormatEncoding.Extensible && format.BitsPerSample == 32);
@@ -96,16 +123,44 @@ public sealed class AudioSpectrumCapture : IDisposable
             mono[f] = (float)(sum / channels);
         }
 
-        analyzer.Push(mono);
-
-        var now = _clock.Elapsed.TotalSeconds;
-        if (now - _lastEmit >= _interval)
+        lock (_analyzerGate)
         {
-            var dt = now - _lastEmit;
-            _lastEmit = now;
-            var (bands, level) = analyzer.Compute(Math.Min(dt, 0.5));
-            SpectrumReady?.Invoke(bands, level);
+            analyzer.Push(mono);
+            _lastData = callbackTime;
         }
+    }
+
+    /// <summary>
+    /// Emite el espectro a ritmo fijo (no al ritmo irregular en que llegan los bloques de audio).
+    /// Si no llega audio (en silencio WASAPI no envía nada), se rellena con silencio para que
+    /// las luces se apaguen en vez de quedarse congeladas.
+    /// </summary>
+    private void OnEmitTimer(object? state)
+    {
+        var analyzer = _analyzer;
+        if (analyzer is null || !_running)
+            return;
+
+        float[] bands;
+        float level;
+        lock (_analyzerGate)
+        {
+            var now = _clock.Elapsed.TotalSeconds;
+            var dt = _lastEmit > 0 ? now - _lastEmit : _interval;
+            _lastEmit = now;
+
+            if (now - _lastData > 0.15)
+            {
+                var silence = (int)Math.Min(analyzer.SampleRate * dt, SpectrumAnalyzer.FftSize);
+                if (silence > 0)
+                    analyzer.Push(new float[silence]);
+            }
+
+            (bands, level) = analyzer.Compute(Math.Min(dt, 0.5));
+        }
+
+        try { SpectrumReady?.Invoke(bands, level); }
+        catch { /* un consumidor que falla no para la captura */ }
     }
 
     private void OnStopped(object? sender, StoppedEventArgs e)
@@ -140,6 +195,8 @@ public sealed class AudioSpectrumCapture : IDisposable
         lock (_gate)
         {
             _running = false;
+            _emitTimer?.Dispose();
+            _emitTimer = null;
             _restartTimer?.Dispose();
             _restartTimer = null;
             try { _capture?.StopRecording(); } catch { /* ya parada */ }

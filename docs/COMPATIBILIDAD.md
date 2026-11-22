@@ -66,3 +66,31 @@
 | CPU_FAN1 (bomba Nautilus) | 3154 RPM | 2605 RPM | — | — (nunca baja del 60 %) | — |
 
 La bomba sí responde a la señal PWM (de 2605 a 3154 RPM), así que el límite del 60 % tiene efecto real.
+
+## Fase 3: iluminación probada en tu PC (22-11-2026)
+
+Todo con el cliente propio del SDK (protocolo 6) contra el servicio de OpenRGB 1.1, **sin permisos de administrador**.
+
+| Prueba | Resultado |
+|---|---|
+| Color fijo en todo | **Todo en cian**: ventiladores de la caja, líquida (bomba y ventiladores) y las dos RAM ✅ (confirmado por ti) |
+| Mapa de conectores | **JRAINBOW1 = ventiladores de la caja** (3 frontales y 1 trasero) · **JRAINBOW2 = líquida** (bomba y 3 ventiladores de arriba) |
+| LEDs por cadena | Las cadenas RS van **en paralelo**: cada ventilador (y la bomba) repite los mismos **8 LEDs**. Los dos conectores se configuran a 8 |
+| Arcoíris animado (30 fps) | Fluido en ventiladores, bomba y RAM ✅ (confirmado por ti) · Céfiro gasta **0,18 % de CPU** |
+| Efecto Música | Corregido el envío irregular (15 → 30 espectros/s). Prueba automática de punta a punta: el LED de graves pasa de 18 a 278 de brillo con sonido ✅. Confirmado por ti con música real |
+| Modos propios del dispositivo | "Rainbow" en la RAM y "Rainbow wave" en la placa (se elige el nombre parecido) ✅ |
+| Redetección / reinicio de OpenRGB | Céfiro detecta los nuevos IDs y vuelve a aplicar el modo ✅ |
+
+### Qué no se puede hacer (por cómo está cableado)
+
+- **Un color distinto en cada ventilador de una misma cadena**: van en paralelo y reciben la misma señal. Lo que sí
+  puedes es tener un efecto para la **caja**, otro para la **líquida** y otro para **cada módulo de RAM**.
+  Para colores por ventilador harían falta un hub ARGB con salidas independientes o un ventilador por conector,
+  y la placa solo tiene 2 conectores ARGB.
+- La gráfica no tiene iluminación controlable.
+
+### Recomendación
+
+**MSI Center · Mystic Light** (su proceso LEDKeeper2) sigue arrancando con Windows. Ahora mismo no ha interferido,
+pero puede volver a poner sus colores tras reiniciar o suspender. Desinstala el módulo Mystic Light en
+MSI Center (Características → Mystic Light → Desinstalar). Céfiro te avisará mientras siga activo.

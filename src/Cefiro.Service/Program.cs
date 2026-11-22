@@ -16,9 +16,9 @@ using Serilog.Events;
 var demo = args.Contains("--demo");
 var pipeName = GetArg(args, "--pipe") ?? Cefiro.Ipc.Contracts.IpcConstants.PipeName;
 
-var dataDirectory = demo
+var dataDirectory = GetArg(args, "--data") ?? (demo
     ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Cefiro", "demo")
-    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Cefiro");
+    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Cefiro"));
 Directory.CreateDirectory(Path.Combine(dataDirectory, "logs"));
 
 Log.Logger = new LoggerConfiguration()

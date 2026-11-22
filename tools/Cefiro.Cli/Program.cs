@@ -133,6 +133,26 @@ try
             Console.WriteLine($"Parpadeando {idev.Name}{(izone is null ? "" : $" · zona {izone}")}{(iled is null ? "" : $" · LED {iled}")} durante 6 s.");
             break;
 
+        case "pattern":
+            // pattern <texto del dispositivo> <zona> [tamaño de bloque]: bloques de colores para localizar ventiladores
+            var pstate = await api.CallAsync<LightingStateDto>(Methods.GetLighting, null);
+            var pdev = FindDevice(pstate, positional[1]);
+            var pzone = pdev.Zones.Single(z => z.Index == int.Parse(positional[2], CultureInfo.InvariantCulture));
+            var block = positional.Length > 3 ? int.Parse(positional[3], CultureInfo.InvariantCulture) : 8;
+            string[] palette = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#FFFFFF", "#00FFFF", "#FF8000"];
+            var layers = Enumerable.Range(0, pzone.LedCount)
+                .Select(i => new LightingLayerDto(
+                    new LightingTargetDto(pdev.Key, null, pzone.StartLed + i),
+                    new EffectDto { Kind = EffectKind.Static, Colors = [palette[(i / block) % palette.Length]] }))
+                .ToList();
+            var pattern = await api.CallAsync<LightingStateDto>(Methods.SetLighting, pstate.Settings with { SyncAll = false, Layers = layers, Enabled = true });
+            Console.WriteLine($"{pdev.Name} · {pzone.Name}: {pzone.LedCount} LEDs en bloques de {block}: rojo, verde, azul, amarillo, magenta, blanco, cian, naranja.");
+            break;
+
+        case "audio-selftest":
+            await AudioSelfTestAsync(api);
+            break;
+
         case "music":
             // music [segundos]: escucha el audio del sistema y lo envía al servicio
             await StreamMusicAsync(api, positional.Length > 1 ? int.Parse(positional[1], CultureInfo.InvariantCulture) : 20);
@@ -318,6 +338,74 @@ static async Task StreamMusicAsync(CefiroApi api, int seconds)
     await Task.Delay(TimeSpan.FromSeconds(seconds));
     capture.Stop();
     Console.WriteLine($"Enviados {sent} espectros.");
+}
+
+static async Task AudioSelfTestAsync(CefiroApi api)
+{
+    // Reproduce un tono suave (100 Hz, 15 % de volumen) 4 s, después 3 s de silencio, y comprueba de
+    // punta a punta que los LEDs que envía el servicio se iluminan con el sonido y se apagan sin él.
+    var gen = new NAudio.Wave.SampleProviders.SignalGenerator(48000, 2)
+    {
+        Type = NAudio.Wave.SampleProviders.SignalGeneratorType.Sin,
+        Frequency = 100,
+        Gain = 0.15,
+    };
+#pragma warning disable CS0618
+    using var output = new NAudio.Wave.WasapiOut(NAudio.CoreAudioApi.AudioClientShareMode.Shared, 50);
+#pragma warning restore CS0618
+    output.Init(new NAudio.Wave.SampleProviders.SampleToWaveProvider(gen));
+
+    var playing = false;
+    var withSound = new List<int>();
+    var withoutSound = new List<int>();
+    api.OtherEvent += (_, e) =>
+    {
+        if (e.Name != Events.Lighting || CefiroJson.FromElement<LightingFrameDto>(e.Payload) is not { } frame)
+            return;
+
+        // LED 0 de la primera RAM: escucha la banda de graves.
+        var ram = frame.Devices.FirstOrDefault(d => d.DeviceKey.Contains("Vengeance", StringComparison.OrdinalIgnoreCase));
+        if (ram is null || ram.Colors.Length < 6)
+            return;
+
+        var sum = Convert.ToInt32(ram.Colors[..2], 16) + Convert.ToInt32(ram.Colors[2..4], 16) + Convert.ToInt32(ram.Colors[4..6], 16);
+        lock (withSound)
+            (playing ? withSound : withoutSound).Add(sum);
+    };
+
+    using var capture = new Cefiro.Audio.AudioSpectrumCapture(30);
+    var count = 0;
+    var maxBass = 0f;
+    capture.SpectrumReady += (bands, level) =>
+    {
+        Interlocked.Increment(ref count);
+        maxBass = Math.Max(maxBass, bands.Take(4).Max());
+        _ = api.CallAsync(Methods.AudioSpectrum, new AudioSpectrumDto(bands, level));
+    };
+
+    capture.Start();
+    await Task.Delay(1500); // silencio inicial
+    lock (withSound) withoutSound.Clear();
+    playing = true;
+    output.Play();
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    await Task.Delay(4000);
+    output.Stop();
+    var soundSeconds = sw.Elapsed.TotalSeconds;
+    await Task.Delay(800);
+    playing = false;
+    await Task.Delay(2500);
+    capture.Stop();
+
+    Console.WriteLine($"Espectros: {count} (≈{count / (soundSeconds + 4.8):0.0} por segundo); graves máx {maxBass:0.00}");
+    Console.WriteLine($"Captura: {capture.Diagnostics}");
+    lock (withSound)
+    {
+        var on = withSound.Count > 0 ? withSound.Average() : 0;
+        var off = withoutSound.Count > 0 ? withoutSound.TakeLast(Math.Max(1, withoutSound.Count / 2)).Average() : 0;
+        Console.WriteLine($"Brillo del LED de graves de la RAM: con sonido {on:0} / sin sonido {off:0} (máx 765) · tramas {withSound.Count}/{withoutSound.Count}");
+        Console.WriteLine(on > off * 3 && on > 150 ? "RESULTADO: las luces REACCIONAN al sonido" : "RESULTADO: NO reaccionan como deberían");
+    }
 }
 
 static async Task WatchFansAsync(CefiroApi api, int seconds)
