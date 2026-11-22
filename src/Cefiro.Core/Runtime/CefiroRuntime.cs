@@ -19,6 +19,7 @@ namespace Cefiro.Core.Runtime;
 public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyncDisposable
 {
     private readonly IHardwareBackend _backend;
+    private readonly Lighting.ILightingBackend? _lightingBackend;
     private readonly RuntimeOptions _options;
     private readonly ILogger _logger;
     private readonly ProcessStats _processStats = new();
@@ -44,9 +45,10 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
     private long _tick;
     private int _consecutiveFailures;
 
-    public CefiroRuntime(IHardwareBackend backend, RuntimeOptions options, ILogger<CefiroRuntime> logger)
+    public CefiroRuntime(IHardwareBackend backend, Lighting.ILightingBackend? lightingBackend, RuntimeOptions options, ILogger<CefiroRuntime> logger)
     {
         _backend = backend;
+        _lightingBackend = lightingBackend;
         _options = options;
         _logger = logger;
         _store = new JsonStore(Path.Combine(options.DataDirectory, "config"), logger);
@@ -59,6 +61,7 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
         Route<object, StatusDto>(Methods.GetStatus, (_, _) => Task.FromResult(_status));
 
         RegisterFanRoutes();
+        RegisterLightingRoutes();
     }
 
     public event EventHandler<IpcEvent>? EventPublished;
@@ -87,23 +90,33 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
         _thread.Start();
 
         await _firstOpenAttempt.Task.WaitAsync(TimeSpan.FromSeconds(60), cancellationToken).ConfigureAwait(false);
+        StartLighting();
     }
 
-    /// <summary>Detiene el bucle y devuelve todos los ventiladores a la BIOS.</summary>
-    public Task StopAsync()
+    /// <summary>Detiene la iluminación y el bucle, y devuelve todos los ventiladores a la BIOS.</summary>
+    public async Task StopAsync()
     {
+        try
+        {
+            await StopLightingAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deteniendo la iluminación");
+        }
+
         if (_thread is null)
-            return Task.CompletedTask;
+            return;
 
         _stopSignal.Set();
-        return Task.Run(() =>
+        await Task.Run(() =>
         {
             if (!_thread.Join(TimeSpan.FromSeconds(15)))
             {
                 _logger.LogError("El bucle de hardware no terminó a tiempo; se devuelven los ventiladores a la BIOS desde otro hilo");
                 EmergencyRelease();
             }
-        });
+        }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -198,9 +211,8 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
             _history = new SensorHistory(_sensors.Length);
             _backend.ReadValues(_values);
 
-            OnHardwareOpened();
-
             _catalog = BuildCatalog(version: (_catalog?.Version ?? 0) + 1);
+            OnHardwareOpened();
             _hardwareReady = true;
             _lastError = null;
             _logger.LogInformation("Hardware listo en {Ms} ms: {Sensors} sensores, {Fans} salidas de ventilador ({Backend})",
@@ -298,9 +310,13 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
         // Ventiladores y seguridad. Siempre se ejecuta, incluso con lecturas nulas.
         TickFans(timestamp);
 
+        // Copia para el resto de hilos (iluminación, interfaz): el array del bucle no se comparte nunca.
+        var snapshot = (float?[])_values.Clone();
+        _sensorSnapshot = snapshot;
+
         if (HasListeners())
         {
-            Publish(Events.Sensors, new SensorFrameDto(_catalog?.Version ?? 0, timestamp, (float?[])_values.Clone()));
+            Publish(Events.Sensors, new SensorFrameDto(_catalog?.Version ?? 0, timestamp, snapshot));
         }
 
         if (DateTime.UtcNow - _lastConflictScan > _options.ConflictScanInterval)

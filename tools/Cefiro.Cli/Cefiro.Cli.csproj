@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cefiro.Ipc\Cefiro.Ipc.csproj" />
+    <ProjectReference Include="..\..\src\Cefiro.Audio\Cefiro.Audio.csproj" />
   </ItemGroup>
 
 </Project>

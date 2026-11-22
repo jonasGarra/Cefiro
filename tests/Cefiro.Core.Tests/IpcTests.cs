@@ -67,7 +67,7 @@ public class IpcTests
             TickInterval = TimeSpan.FromMilliseconds(100),
         };
 
-        await using var runtime = new CefiroRuntime(new DemoHardwareBackend(), options, NullLogger<CefiroRuntime>.Instance);
+        await using var runtime = new CefiroRuntime(new DemoHardwareBackend(), new DemoLightingBackend(), options, NullLogger<CefiroRuntime>.Instance);
         await using var api = new CefiroApi(new InProcessConnection(runtime, runtime));
         var frames = 0;
         api.SensorFrame += (_, _) => Interlocked.Increment(ref frames);

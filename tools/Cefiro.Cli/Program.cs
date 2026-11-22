@@ -74,6 +74,10 @@ try
             await PrintFansAsync(api);
             break;
 
+        case "watch-fans":
+            await WatchFansAsync(api, positional.Length > 1 && int.TryParse(positional[1], out var ws) ? ws : 5);
+            break;
+
         case "fan":
             await SetFanAsync(api, positional.Skip(1).ToArray());
             break;
@@ -87,6 +91,61 @@ try
 
         case "calibrate":
             await CalibrateAsync(api, positional.Skip(1).ToArray());
+            break;
+
+        case "safety":
+            // safety <cpuCritico> <gpuCritico>
+            var current = await api.GetFanSettingsAsync();
+            var safety = current.Safety with
+            {
+                CpuCriticalCelsius = float.Parse(positional[1], CultureInfo.InvariantCulture),
+                GpuCriticalCelsius = float.Parse(positional[2], CultureInfo.InvariantCulture),
+            };
+            var appliedSafety = (await api.SetFanSettingsAsync(current with { Safety = safety })).Safety;
+            Console.WriteLine($"Emergencia: CPU {appliedSafety.CpuCriticalCelsius} °C, GPU {appliedSafety.GpuCriticalCelsius} °C");
+            break;
+
+        case "lights":
+            PrintLighting(await api.CallAsync<LightingStateDto>(Methods.GetLighting, null));
+            break;
+
+        case "light":
+            // light <efecto> [#color ...] [--speed x] [--brightness y] [--native modo] [--sensor id]
+            await SetSyncEffectAsync(api, positional.Skip(1).ToArray(), args);
+            break;
+
+        case "zone":
+            // zone <texto del dispositivo> <índice de zona> <nº de LEDs>
+            var lstate = await api.CallAsync<LightingStateDto>(Methods.GetLighting, null);
+            var dev = FindDevice(lstate, positional[1]);
+            var resized = await api.CallAsync<LightingStateDto>(Methods.ResizeZone,
+                new ResizeZoneRequest(dev.Key, int.Parse(positional[2], CultureInfo.InvariantCulture), int.Parse(positional[3], CultureInfo.InvariantCulture)));
+            PrintLighting(resized);
+            break;
+
+        case "identify":
+            // identify <texto del dispositivo> [zona] [led]
+            var istate = await api.CallAsync<LightingStateDto>(Methods.GetLighting, null);
+            var idev = FindDevice(istate, positional[1]);
+            int? izone = positional.Length > 2 ? int.Parse(positional[2], CultureInfo.InvariantCulture) : null;
+            int? iled = positional.Length > 3 ? int.Parse(positional[3], CultureInfo.InvariantCulture) : null;
+            await api.CallAsync(Methods.IdentifyLeds, new IdentifyRequest(idev.Key, izone, iled, 6000));
+            Console.WriteLine($"Parpadeando {idev.Name}{(izone is null ? "" : $" · zona {izone}")}{(iled is null ? "" : $" · LED {iled}")} durante 6 s.");
+            break;
+
+        case "music":
+            // music [segundos]: escucha el audio del sistema y lo envía al servicio
+            await StreamMusicAsync(api, positional.Length > 1 ? int.Parse(positional[1], CultureInfo.InvariantCulture) : 20);
+            break;
+
+        case "all-bios":
+            var all = await api.GetFanSettingsAsync();
+            await api.SetFanSettingsAsync(all with
+            {
+                Channels = all.Channels.Select(c => c with { Mode = FanMode.Bios }).ToList(),
+                Safety = new SafetySettingsDto(),
+            });
+            Console.WriteLine("Todas las salidas devueltas a la BIOS y seguridad por defecto.");
             break;
 
         default:
@@ -196,6 +255,89 @@ static async Task PrintFansAsync(CefiroApi api)
     }
 
     Console.WriteLine($"  Seguridad: emergencia CPU {settings.Safety.CpuCriticalCelsius} °C / GPU {settings.Safety.GpuCriticalCelsius} °C");
+}
+
+static void PrintLighting(LightingStateDto s)
+{
+    Console.WriteLine($"OpenRGB: {(s.Connected ? $"conectado a \"{s.ServerName}\" (protocolo {s.ProtocolVersion})" : "desconectado")}" +
+                      (s.Error is null ? "" : $" · {s.Error}") + (s.NightActive ? " · MODO NOCHE" : ""));
+    foreach (var d in s.Devices)
+    {
+        Console.WriteLine($"  [{d.Kind}] {d.Name} · {d.LedCount} LEDs · {d.Location}");
+        foreach (var z in d.Zones)
+            Console.WriteLine($"      zona {z.Index}: {z.Name,-14} {z.LedCount,3} LEDs (desde el LED {z.StartLed}){(z.Resizable ? $"  [ajustable {z.MinLeds}-{z.MaxLeds}]" : "")}");
+        if (d.NativeModes.Count > 0)
+            Console.WriteLine($"      modos propios: {string.Join(", ", d.NativeModes)}");
+    }
+
+    var e = s.Settings.SyncEffect;
+    Console.WriteLine($"  Efecto: {(s.Settings.SyncAll ? "sincronizado" : $"{s.Settings.Layers.Count} capas")} · {e.Kind} {string.Join(" ", e.Colors)} · " +
+                      $"velocidad {e.Speed} · brillo general {s.Settings.Brightness} %");
+}
+
+static LightingDeviceDto FindDevice(LightingStateDto state, string text) =>
+    state.Devices.FirstOrDefault(d => d.Name.Contains(text, StringComparison.OrdinalIgnoreCase) || d.Key.Contains(text, StringComparison.OrdinalIgnoreCase))
+    ?? throw new ArgumentException($"No hay ningún dispositivo que contenga \"{text}\".");
+
+static async Task SetSyncEffectAsync(CefiroApi api, string[] positional, string[] args)
+{
+    var state = await api.CallAsync<LightingStateDto>(Methods.GetLighting, null);
+    var kind = Enum.Parse<EffectKind>(positional.ElementAtOrDefault(0) ?? "Static", ignoreCase: true);
+    var colors = positional.Skip(1).Where(p => p.StartsWith('#')).ToList();
+    var speed = GetArg(args, "--speed") is { } sp ? float.Parse(sp, CultureInfo.InvariantCulture) : 1f;
+    var brightness = GetArg(args, "--brightness") is { } br ? float.Parse(br, CultureInfo.InvariantCulture) : 100f;
+
+    var effect = new EffectDto
+    {
+        Kind = kind,
+        Colors = colors.Count > 0 ? colors : state.Settings.SyncEffect.Colors,
+        Speed = speed,
+        Brightness = brightness,
+        NativeMode = GetArg(args, "--native"),
+        SensorId = GetArg(args, "--sensor"),
+    };
+
+    var applied = await api.CallAsync<LightingStateDto>(Methods.SetLighting, state.Settings with { SyncAll = true, SyncEffect = effect, Enabled = true });
+    PrintLighting(applied);
+}
+
+static async Task StreamMusicAsync(CefiroApi api, int seconds)
+{
+    using var capture = new Cefiro.Audio.AudioSpectrumCapture(30);
+    var sent = 0;
+    capture.Error += message => Console.Error.WriteLine(message);
+    capture.SpectrumReady += (bands, level) =>
+    {
+        _ = api.CallAsync(Methods.AudioSpectrum, new AudioSpectrumDto(bands, level));
+        if (Interlocked.Increment(ref sent) % 30 == 0)
+            Console.WriteLine($"  nivel {level:P0}  graves {bands[1]:0.00}  medios {bands[8]:0.00}  agudos {bands[14]:0.00}");
+    };
+
+    Console.WriteLine($"Escuchando \"{Cefiro.Audio.AudioSpectrumCapture.DefaultOutputName()}\" durante {seconds} s…");
+    capture.Start();
+    await Task.Delay(TimeSpan.FromSeconds(seconds));
+    capture.Stop();
+    Console.WriteLine($"Enviados {sent} espectros.");
+}
+
+static async Task WatchFansAsync(CefiroApi api, int seconds)
+{
+    var catalog = await api.GetCatalogAsync();
+    var headers = catalog.FanChannels.ToDictionary(f => f.Id, f => f.Header);
+    var count = 0;
+    var done = new TaskCompletionSource();
+    api.FanFrame += (_, frame) =>
+    {
+        var parts = frame.Channels
+            .Where(c => c.EffectiveMode != FanMode.Bios || c.Note is not null || (c.Rpm ?? 0) > 0)
+            .Select(c => $"{headers.GetValueOrDefault(c.ChannelId, c.ChannelId)}[{c.EffectiveMode} {c.OutputPercent:0}% {c.Rpm:0}rpm" +
+                         (c.SourceTemperature is { } t ? $" {t:0.0}°C" : "") + (c.Note is { } n ? $" · {n}" : "") + "]");
+        Console.WriteLine($"{DateTimeOffset.FromUnixTimeMilliseconds(frame.Timestamp).LocalDateTime:HH:mm:ss}{(frame.EmergencyActive ? " EMERGENCIA" : "")}  {string.Join("  ", parts)}");
+        if (++count >= seconds)
+            done.TrySetResult();
+    };
+
+    await Task.WhenAny(done.Task, Task.Delay(TimeSpan.FromSeconds(seconds + 5)));
 }
 
 static async Task<FanChannelSettingsDto> FindChannelAsync(CefiroApi api, FanSettingsDto settings, string key)

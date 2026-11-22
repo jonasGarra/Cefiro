@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Cefiro.Audio/Cefiro.Audio.csproj" />
     <Project Path="src/Cefiro.Core/Cefiro.Core.csproj" />
     <Project Path="src/Cefiro.Demo/Cefiro.Demo.csproj" />
     <Project Path="src/Cefiro.Hardware/Cefiro.Hardware.csproj" />

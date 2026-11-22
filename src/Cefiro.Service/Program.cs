@@ -63,6 +63,9 @@ try
     builder.Services.AddSingleton<IHardwareBackend>(sp => demo
         ? new DemoHardwareBackend()
         : new LhmHardwareBackend(sp.GetRequiredService<ILogger<LhmHardwareBackend>>()));
+    builder.Services.AddSingleton<Cefiro.Core.Lighting.ILightingBackend>(sp => demo
+        ? new DemoLightingBackend()
+        : new Cefiro.Hardware.Lighting.OpenRgbLightingBackend(sp.GetRequiredService<ILogger<Cefiro.Hardware.Lighting.OpenRgbLightingBackend>>()));
     builder.Services.AddSingleton<CefiroRuntime>();
     builder.Services.AddHostedService<CefiroHostedService>();
 

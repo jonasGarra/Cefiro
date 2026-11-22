@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\Cefiro.Core\Cefiro.Core.csproj" />
     <ProjectReference Include="..\..\src\Cefiro.Ipc\Cefiro.Ipc.csproj" />
     <ProjectReference Include="..\..\src\Cefiro.Demo\Cefiro.Demo.csproj" />
+    <ProjectReference Include="..\..\src\Cefiro.Audio\Cefiro.Audio.csproj" />
   </ItemGroup>
 
 </Project>

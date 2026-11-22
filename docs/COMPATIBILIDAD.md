@@ -44,3 +44,25 @@
   Iluminación dinámica) para que no compita con Céfiro.
 - El **servicio de Mystic Light** de MSI Center está parado de forma temporal. Volverá a arrancar si
   reinicias. En la Fase 5, Céfiro avisará si lo detecta.
+
+## Fase 2: control de ventiladores probado en tu PC (22-11-2026)
+
+| Prueba | Resultado |
+|---|---|
+| SYS_FAN4 fijo al 30 % / 80 % | 651 RPM / 1706 RPM, con rampas suaves (bajada 3 %/s, subida 10 %/s) ✅ |
+| Bomba (CPU_FAN1) pidiendo 20 % | El servicio la dejó en **60 %** ("ajustado por seguridad"), 2608 RPM ✅ |
+| Radiador (PUMP_FAN1) pidiendo 10 % | El servicio lo dejó en **30 %** ✅ |
+| Modo curva (máx. de CPU y GPU) | Sigue la temperatura con histéresis y rampa ✅ |
+| **Emergencia real** (límite 60 °C + carga en 16 hilos) | Todo al 100 % en 1 s: bomba 3150, radiador 2200, caja 2120 y **GPU 3200 RPM**. Salió sola 15 s después de bajar la temperatura ✅ |
+| Parada ordenada del servicio | SYS_FAN4 volvió del 30 % a la curva de la BIOS (51 %) ✅ |
+| **Cierre brusco** (proceso matado) | El chip se quedó en el 30 %, como cabía esperar; al volver a arrancar, Céfiro lo devolvió a la BIOS (52 %) ✅ |
+
+### Calibración automática (datos reales)
+
+| Salida | 100 % | 60 % | 30 % | Se para | Arranca |
+|---|---|---|---|---|---|
+| SYS_FAN4 (6 × RS120 de la caja) | 2117 RPM | 1274 RPM | 640 RPM | por debajo del **15 %** | desde el **20 %** |
+| PUMP_FAN1 (radiador, 3 × RS120) | 2107 RPM | 1269 RPM | 641 RPM | — (nunca baja del 30 %) | — |
+| CPU_FAN1 (bomba Nautilus) | 3154 RPM | 2605 RPM | — | — (nunca baja del 60 %) | — |
+
+La bomba sí responde a la señal PWM (de 2605 a 3154 RPM), así que el límite del 60 % tiene efecto real.
