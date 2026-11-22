@@ -1,0 +1,141 @@
+<UserControl x:Class="Cefiro.App.Controls.CaseSchematic"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Cefiro.App.Controls"
+             xmlns:i="clr-namespace:Cefiro.App.Infrastructure">
+    <UserControl.Resources>
+        <i:AtLeastToVisibilityConverter x:Key="AtLeast" />
+        <i:BoolToVisibilityConverter x:Key="BoolVis" />
+        <i:BoolToVisibilityConverter x:Key="BoolVisInv" Invert="True" />
+        <Style x:Key="Tag" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource CefiroSmallFont}" />
+            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource CefiroTextTertiaryBrush}" />
+        </Style>
+        <Style x:Key="Rpm" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource CefiroSmallFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource CefiroTextSecondaryBrush}" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Lienzo de diseño de 460 × 520, escalado al espacio disponible -->
+    <Viewbox Stretch="Uniform">
+        <Canvas Width="460" Height="520">
+
+            <!-- Caja (vista lateral a través del cristal) -->
+            <Border Canvas.Left="6" Canvas.Top="6" Width="448" Height="508" CornerRadius="24"
+                    BorderBrush="#30FFFFFF" BorderThickness="1.5">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Offset="0" Color="#160E1528" />
+                        <GradientStop Offset="1" Color="#0A05080F" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+            <!-- Reflejo del cristal -->
+            <Path Data="M 30,14 L 150,14 L 40,500 L 14,500 Z" Opacity="0.05" Fill="White" />
+
+            <!-- Placa base -->
+            <Border Canvas.Left="96" Canvas.Top="104" Width="246" Height="262" CornerRadius="10" BorderBrush="#1EFFFFFF" BorderThickness="1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Offset="0" Color="#FF111827" />
+                        <GradientStop Offset="1" Color="#FF0B111E" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+            <!-- Pistas decorativas de la placa -->
+            <Path Stroke="#14FFFFFF" StrokeThickness="1" Data="M 110,330 H 180 V 300 H 230 M 120,120 V 180 H 140 M 300,118 V 160 H 330 M 108,250 H 150" />
+
+            <!-- Tubos de la líquida (de la bomba al radiador) -->
+            <Path Stroke="#3AFFFFFF" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Visibility="{Binding RadiatorOnTop, Converter={StaticResource BoolVis}}"
+                  Data="M 176,160 C 176,120 150,110 150,96 M 196,160 C 200,120 230,110 236,96" />
+            <Path Stroke="#3AFFFFFF" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Visibility="{Binding RadiatorOnTop, Converter={StaticResource BoolVisInv}}"
+                  Data="M 210,176 C 260,176 330,150 370,150 M 210,192 C 270,192 330,240 370,240" />
+
+            <!-- Bomba sobre la CPU -->
+            <c:PumpView Canvas.Left="150" Canvas.Top="150" Width="72" Height="72" Rpm="{Binding PumpRpm}" LedColors="{Binding AioLeds}" />
+            <TextBlock Canvas.Left="150" Canvas.Top="226" Width="72" TextAlignment="Center" Style="{StaticResource Rpm}" Text="{Binding PumpRpmText}" />
+
+            <!-- RAM -->
+            <c:RamStickView Canvas.Left="262" Canvas.Top="132" Width="10" Height="92" LedColors="{Binding Ram1Leds}" />
+            <c:RamStickView Canvas.Left="280" Canvas.Top="132" Width="10" Height="92" LedColors="{Binding Ram2Leds}" />
+            <TextBlock Canvas.Left="248" Canvas.Top="228" Style="{StaticResource Tag}" Text="RAM" Width="56" TextAlignment="Center" />
+
+            <!-- Gráfica -->
+            <Border Canvas.Left="104" Canvas.Top="262" Width="236" Height="66" CornerRadius="10" BorderBrush="#26FFFFFF" BorderThickness="1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Offset="0" Color="#FF1A2133" />
+                        <GradientStop Offset="1" Color="#FF10151F" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+            <c:FanView Canvas.Left="122" Canvas.Top="266" Width="58" Height="58" Rpm="{Binding GpuRpm}" BladeCount="9" />
+            <c:FanView Canvas.Left="190" Canvas.Top="266" Width="58" Height="58" Rpm="{Binding GpuRpm}" BladeCount="9" />
+            <TextBlock Canvas.Left="256" Canvas.Top="286" Width="80" TextWrapping="Wrap" Style="{StaticResource Tag}" Text="{Binding GpuName}" FontSize="9.5" />
+
+            <!-- Techo: radiador de la líquida (o ventiladores de caja si la líquida va en el frontal) -->
+            <Border Canvas.Left="96" Canvas.Top="22" Width="246" Height="74" CornerRadius="10" Background="#FF0D1220" BorderBrush="#22FFFFFF" BorderThickness="1"
+                    Visibility="{Binding RadiatorOnTop, Converter={StaticResource BoolVis}}" />
+            <StackPanel Canvas.Left="104" Canvas.Top="20" Orientation="Horizontal">
+                <c:FanView Width="76" Height="76" Margin="0,0,2,0" Rpm="{Binding TopRpm}" LedColors="{Binding TopLeds}"
+                           Visibility="{Binding TopCount, Converter={StaticResource AtLeast}, ConverterParameter=1}" />
+                <c:FanView Width="76" Height="76" Margin="2,0" Rpm="{Binding TopRpm}" LedColors="{Binding TopLeds}"
+                           Visibility="{Binding TopCount, Converter={StaticResource AtLeast}, ConverterParameter=2}" />
+                <c:FanView Width="76" Height="76" Margin="2,0,0,0" Rpm="{Binding TopRpm}" LedColors="{Binding TopLeds}"
+                           Visibility="{Binding TopCount, Converter={StaticResource AtLeast}, ConverterParameter=3}" />
+            </StackPanel>
+            <TextBlock Canvas.Left="350" Canvas.Top="40" Style="{StaticResource Tag}" Text="{Binding TopLabel}" />
+            <TextBlock Canvas.Left="350" Canvas.Top="56" Style="{StaticResource Rpm}" Text="{Binding TopRpmText}" />
+
+            <!-- Frontal: ventiladores de caja (o el radiador si la líquida va delante) -->
+            <Border Canvas.Left="364" Canvas.Top="100" Width="84" Height="256" CornerRadius="10" Background="#FF0D1220" BorderBrush="#22FFFFFF" BorderThickness="1"
+                    Visibility="{Binding RadiatorOnTop, Converter={StaticResource BoolVisInv}}" />
+            <StackPanel Canvas.Left="368" Canvas.Top="104">
+                <c:FanView Width="76" Height="76" Margin="0,0,0,8" Rpm="{Binding FrontRpm}" LedColors="{Binding FrontLeds}"
+                           Visibility="{Binding FrontCount, Converter={StaticResource AtLeast}, ConverterParameter=1}" />
+                <c:FanView Width="76" Height="76" Margin="0,0,0,8" Rpm="{Binding FrontRpm}" LedColors="{Binding FrontLeds}"
+                           Visibility="{Binding FrontCount, Converter={StaticResource AtLeast}, ConverterParameter=2}" />
+                <c:FanView Width="76" Height="76" Rpm="{Binding FrontRpm}" LedColors="{Binding FrontLeds}"
+                           Visibility="{Binding FrontCount, Converter={StaticResource AtLeast}, ConverterParameter=3}" />
+            </StackPanel>
+            <TextBlock Canvas.Left="372" Canvas.Top="362" Style="{StaticResource Tag}" Text="{Binding FrontLabel}" />
+            <TextBlock Canvas.Left="372" Canvas.Top="377" Style="{StaticResource Rpm}" Text="{Binding FrontRpmText}" />
+
+            <!-- Trasero (lado izquierdo, arriba) -->
+            <c:FanView Canvas.Left="14" Canvas.Top="112" Width="72" Height="72" Rpm="{Binding CaseRpm}" LedColors="{Binding CaseLeds}"
+                       Visibility="{Binding RearFans, Converter={StaticResource AtLeast}, ConverterParameter=1}" />
+            <TextBlock Canvas.Left="18" Canvas.Top="190" Style="{StaticResource Tag}" Text="TRASERO"
+                       Visibility="{Binding RearFans, Converter={StaticResource AtLeast}, ConverterParameter=1}" />
+
+            <!-- Cubierta de la fuente -->
+            <Border Canvas.Left="16" Canvas.Top="404" Width="428" Height="100" CornerRadius="14" BorderBrush="#1AFFFFFF" BorderThickness="1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Offset="0" Color="#FF0E1424" />
+                        <GradientStop Offset="1" Color="#FF080B14" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.85">
+                    <Image Source="{StaticResource CefiroLogoImage}" Width="30" Height="30" Margin="0,0,10,0" />
+                    <TextBlock Text="CÉFIRO" FontFamily="{StaticResource CefiroDisplayFont}" FontSize="22" FontWeight="SemiBold"
+                               Foreground="{DynamicResource CefiroAccentGradientBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- Inferiores (opcionales) -->
+            <StackPanel Canvas.Left="110" Canvas.Top="412" Orientation="Horizontal">
+                <c:FanView Width="64" Height="64" Margin="0,0,180,0" Rpm="{Binding CaseRpm}" LedColors="{Binding CaseLeds}"
+                           Visibility="{Binding BottomFans, Converter={StaticResource AtLeast}, ConverterParameter=1}" />
+                <c:FanView Width="64" Height="64" Rpm="{Binding CaseRpm}" LedColors="{Binding CaseLeds}"
+                           Visibility="{Binding BottomFans, Converter={StaticResource AtLeast}, ConverterParameter=2}" />
+            </StackPanel>
+        </Canvas>
+    </Viewbox>
+</UserControl>

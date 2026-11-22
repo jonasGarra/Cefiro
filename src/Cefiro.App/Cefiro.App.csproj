@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- 10.0.19041: SkiaSharp (gráficas de LiveCharts2) solo trae binarios WPF para esta plataforma. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Cefiro.App</RootNamespace>
+    <AssemblyName>Cefiro</AssemblyName>
+    <ApplicationIcon>Assets\cefiro.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Description>Céfiro: control de iluminación RGB y ventiladores.</Description>
+    <TieredPGO>true</TieredPGO>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" />
+    <PackageReference Include="H.NotifyIcon.Wpf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cefiro.Ipc\Cefiro.Ipc.csproj" />
+    <ProjectReference Include="..\Cefiro.Core\Cefiro.Core.csproj" />
+    <ProjectReference Include="..\Cefiro.Demo\Cefiro.Demo.csproj" />
+    <ProjectReference Include="..\Cefiro.Audio\Cefiro.Audio.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\cefiro.ico" />
+    <Resource Include="Assets\cefiro-256.png" />
+  </ItemGroup>
+
+</Project>

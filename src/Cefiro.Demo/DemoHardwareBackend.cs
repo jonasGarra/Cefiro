@@ -13,7 +13,7 @@ public sealed class DemoHardwareBackend : IHardwareBackend
     private const string Board = "MSI X670E GAMING PLUS WIFI (MS-7E16) · DEMO";
     private const string Cpu = "AMD Ryzen 7 7700X · DEMO";
     private const string Gpu = "NVIDIA GeForce RTX 5070 · DEMO";
-    private const string Ram = "Total Memory · DEMO";
+    private const string Ram = "Memoria del sistema · DEMO";
 
     private readonly Random _random = new(1234);
     private readonly Stopwatch _clock = new();

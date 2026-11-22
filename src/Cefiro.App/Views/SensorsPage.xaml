@@ -1,0 +1,78 @@
+<UserControl x:Class="Cefiro.App.Views.SensorsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <!-- Tarjeta de un componente: nombre, cabecera de columnas y una fila por sensor -->
+        <DataTemplate x:Key="SensorGroupTemplate">
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,14" Padding="18,14">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <ui:SymbolIcon Symbol="{Binding Glyph}" FontSize="18" Foreground="{DynamicResource CefiroAccentBrush}" Margin="0,0,8,0" />
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding Device}" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="96" />
+                            <ColumnDefinition Width="84" />
+                            <ColumnDefinition Width="84" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource Overline}" Text="SENSOR" />
+                        <TextBlock Grid.Column="1" Style="{StaticResource Overline}" Text="ACTUAL" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource Overline}" Text="MÍN" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="3" Style="{StaticResource Overline}" Text="MÁX" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="96" />
+                                        <ColumnDefinition Width="84" />
+                                        <ColumnDefinition Width="84" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource Body}" FontSize="13" Text="{Binding Name}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding Id}" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Body}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Right"
+                                               Typography.NumeralAlignment="Tabular" Text="{Binding ValueText}" />
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Caption}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Text="{Binding MinText}" />
+                                    <TextBlock Grid.Column="3" Style="{StaticResource Caption}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Text="{Binding MaxText}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel Margin="24,12,28,20">
+        <DockPanel DockPanel.Dock="Top" Margin="4,0,0,16">
+            <ui:TextBox DockPanel.Dock="Right" Width="280" PlaceholderText="Buscar sensor…" VerticalAlignment="Center"
+                        Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}">
+                <ui:TextBox.Icon>
+                    <ui:SymbolIcon Symbol="Search24" />
+                </ui:TextBox.Icon>
+            </ui:TextBox>
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitle}" Text="Sensores" />
+                <TextBlock Style="{StaticResource PageSubtitle}">
+                    <Run Text="{Binding Count, Mode=OneWay}" /><Run Text=" sensores en tiempo real. El mínimo y el máximo son desde que abriste esta ventana." />
+                </TextBlock>
+            </StackPanel>
+        </DockPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ItemsControl ItemsSource="{Binding LeftGroups}" ItemTemplate="{StaticResource SensorGroupTemplate}" VerticalAlignment="Top" />
+                <ItemsControl Grid.Column="2" ItemsSource="{Binding RightGroups}" ItemTemplate="{StaticResource SensorGroupTemplate}" VerticalAlignment="Top" />
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

@@ -7,6 +7,14 @@ namespace Cefiro.Hardware.Lhm;
 /// <summary>Filtra y traduce al español los sensores de LibreHardwareMonitor.</summary>
 internal static partial class SensorNaming
 {
+    /// <summary>Nombre del componente tal y como se enseña (los genéricos de LHM, en español).</summary>
+    public static string DeviceName(string lhmName) => lhmName switch
+    {
+        "Total Memory" or "Generic Memory" => "Memoria del sistema",
+        "Virtual Memory" => "Memoria virtual",
+        _ => lhmName,
+    };
+
     public static DeviceCategory Category(HardwareType type) => type switch
     {
         HardwareType.Cpu => DeviceCategory.Cpu,

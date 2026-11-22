@@ -88,7 +88,7 @@ public sealed class LhmHardwareBackend : IHardwareBackend
 
         foreach (var hw in _fastHardware.Concat(_slowHardware))
         {
-            var device = hw.HardwareType == HardwareType.SuperIO && motherboard is not null ? motherboard.Name : hw.Name;
+            var device = SensorNaming.DeviceName(hw.HardwareType == HardwareType.SuperIO && motherboard is not null ? motherboard.Name : hw.Name);
             foreach (var sensor in hw.Sensors.OrderBy(s => s.SensorType).ThenBy(s => s.Index))
             {
                 if (!SensorNaming.Include(hw, sensor) || !SensorNaming.HasPlausibleValue(sensor))
