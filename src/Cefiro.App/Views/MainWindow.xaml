@@ -16,6 +16,7 @@
     <Window.Resources>
         <i:BoolToVisibilityConverter x:Key="BoolVis" />
         <i:BoolToVisibilityConverter x:Key="BoolVisInv" Invert="True" />
+        <i:NullToVisibilityConverter x:Key="NullVis" />
         <i:EqualsConverter x:Key="Equals" />
     </Window.Resources>
 
@@ -35,6 +36,16 @@
                 </ui:TitleBar.Icon>
                 <ui:TitleBar.TrailingContent>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Border Style="{StaticResource Chip}" Margin="0,0,8,0" Cursor="Hand" ToolTip="Perfil activo (pulsa para ver los perfiles)"
+                                Visibility="{Binding ActiveProfileText, Converter={StaticResource NullVis}}">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding NavigateCommand}" CommandParameter="perfiles" />
+                            </Border.InputBindings>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Layer24" FontSize="13" Foreground="{DynamicResource CefiroAccentBrush}" Margin="0,0,6,0" />
+                                <TextBlock Style="{StaticResource ChipText}" Text="{Binding ActiveProfileText}" MaxWidth="240" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
                         <Border Style="{StaticResource Chip}" Margin="0,0,8,0" Visibility="{Binding IsDemo, Converter={StaticResource BoolVis}}"
                                 Background="#22FFB300" BorderBrush="#66FFB300">
                             <TextBlock Style="{StaticResource ChipText}" Text="MODO DEMO · datos simulados" Foreground="{StaticResource CefiroWarnBrush}" />
@@ -101,6 +112,22 @@
                             <StackPanel>
                                 <ui:SymbolIcon Symbol="Pulse24" FontSize="24" HorizontalAlignment="Center" />
                                 <TextBlock Text="Sensores" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton DockPanel.Dock="Top" Style="{StaticResource NavItem}" GroupName="nav" Command="{Binding NavigateCommand}" CommandParameter="perfiles"
+                                     IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=perfiles}" ToolTip="Perfiles">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="Layer24" FontSize="24" HorizontalAlignment="Center" />
+                                <TextBlock Text="Perfiles" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Abajo: ajustes -->
+                        <RadioButton DockPanel.Dock="Bottom" Style="{StaticResource NavItem}" GroupName="nav" Command="{Binding NavigateCommand}" CommandParameter="ajustes"
+                                     IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=ajustes}" ToolTip="Ajustes">
+                            <StackPanel>
+                                <ui:SymbolIcon Symbol="Settings24" FontSize="24" HorizontalAlignment="Center" />
+                                <TextBlock Text="Ajustes" FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
 

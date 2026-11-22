@@ -25,6 +25,7 @@ public partial class App : Application
     private MainWindow? _main;
     private MainViewModel? _vm;
     private TrayService? _tray;
+    private HotkeyService? _hotkeys;
     private UiSettingsStore? _settings;
     private bool _exiting;
 
@@ -111,7 +112,12 @@ public partial class App : Application
 
         _vm = new MainViewModel(_session, _settings);
         _main = new MainWindow(_vm) { CloseToTray = _settings.Current.CloseToTray && capture is null };
-        _settings.Changed += s => _main.CloseToTray = s.CloseToTray;
+        MainWindow = _main;
+        _settings.Changed += s =>
+        {
+            _main.CloseToTray = s.CloseToTray;
+            Format.UseFahrenheit = s.UseFahrenheit;
+        };
         _main.HiddenToTray += OnHiddenToTray;
 
         if (capture is null)
@@ -126,6 +132,21 @@ public partial class App : Application
                     return Task.CompletedTask;
                 },
                 lightsEnabled: () => _vm.Lighting.Enabled);
+            Notifier.Handler = (title, message, warning) => _tray?.Notify(title, message, warning);
+
+            // Atajos de teclado globales de los perfiles.
+            try
+            {
+                _hotkeys = new HotkeyService(_main);
+                _hotkeys.ProfileHotkeyPressed += id => _ = ActivateProfileAsync(id, fromHotkey: true);
+            }
+            catch (Exception ex)
+            {
+                UiLog.Error("No se pudieron preparar los atajos de teclado", ex);
+            }
+
+            _session.ProfilesChanged += OnProfilesChanged;
+            OnProfilesChanged();
         }
 
         _session.AlertReceived += OnAlert;
@@ -159,6 +180,40 @@ public partial class App : Application
 
         _tray?.Notify("Céfiro sigue en marcha", "La ventana se ha ocultado en la bandeja. El servicio sigue controlando los ventiladores y las luces.");
         _settings.Update(s => s with { TrayHintShown = true });
+    }
+
+    /// <summary>Perfiles nuevos o cambiados: menú de la bandeja, atajos y texto del icono.</summary>
+    private void OnProfilesChanged()
+    {
+        if (_session?.Profiles is not { } state)
+            return;
+
+        _tray?.SetProfiles(state.Profiles, state.ActiveProfileId, id => ActivateProfileAsync(id, fromHotkey: false));
+
+        var active = state.Profiles.FirstOrDefault(p => p.Id == state.ActiveProfileId);
+        _tray?.SetTooltip(active is null ? "Céfiro" : $"Céfiro · {active.Name}");
+
+        if (_hotkeys is not null)
+        {
+            var failed = _hotkeys.Register(state.Profiles.Where(p => p.Hotkey is not null).Select(p => (p.Id, p.Hotkey!)));
+            if (failed.Count > 0)
+                _tray?.Notify("Atajo no disponible", $"Otro programa ya usa {string.Join(", ", failed)}. Elige otra combinación en Perfiles.", warning: true);
+        }
+    }
+
+    private async Task ActivateProfileAsync(string id, bool fromHotkey)
+    {
+        try
+        {
+            var state = await _session!.ActivateProfileAsync(id);
+            if (fromHotkey && state.Profiles.FirstOrDefault(p => p.Id == id) is { } profile && _settings?.Current.ToastsEnabled == true)
+                _tray?.Notify($"Perfil «{profile.Name}»", "Ventiladores y luces cambiados.");
+        }
+        catch (Exception ex)
+        {
+            UiLog.Error("No se pudo activar el perfil", ex);
+            _tray?.Notify("No se pudo activar el perfil", ex.Message, warning: true);
+        }
     }
 
     private void OnAlert(AlertDto alert)
@@ -197,12 +252,26 @@ public partial class App : Application
         var pages = new[]
         {
             "panel", "panel-abajo", "ventiladores", "ventiladores-abajo", "ventiladores-editor", "ventiladores-equilibrado",
-            "iluminacion", "iluminacion-abajo", "iluminacion-zonas", "sensores",
+            "iluminacion", "iluminacion-abajo", "iluminacion-zonas", "sensores", "perfiles", "ajustes",
         };
         for (var i = 0; i < pages.Length; i++)
         {
             var page = pages[i];
-            if (page == "ventiladores-equilibrado")
+            if (page == "perfiles")
+            {
+                // Prueba de uso real: dos perfiles, uno con programa y atajo, y activarlo.
+                _vm!.Navigate("perfiles");
+                await _vm.Profiles.NewProfileCommand.ExecuteAsync(null);
+                await _vm.Profiles.NewProfileCommand.ExecuteAsync(null);
+                if (_session!.Profiles?.Profiles.FirstOrDefault() is { } first)
+                {
+                    await _session.SaveProfileAsync(first with { Name = "Juegos", Programs = ["juego.exe", "steam.exe"], Hotkey = "Ctrl+Alt+1" }, captureCurrent: false);
+                    await _session.ActivateProfileAsync(first.Id);
+                }
+
+                await Task.Delay(2200);
+            }
+            else if (page == "ventiladores-equilibrado")
             {
                 // Prueba de uso real: aplicar un modo rápido y ver que las tarjetas pasan a curva.
                 _vm!.Fans.CloseEditorCommand.Execute(null);
@@ -302,6 +371,7 @@ public partial class App : Application
             _main.Close();
         }
 
+        _hotkeys?.Dispose();
         _tray?.Dispose();
         _vm?.Lighting.Dispose();
         if (_session is not null)

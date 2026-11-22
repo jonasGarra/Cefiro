@@ -36,6 +36,8 @@ public sealed partial class CefiroSession : ObservableObject, IAsyncDisposable
         {
             if (e.Name == Events.Lighting && CefiroJson.FromElement<LightingFrameDto>(e.Payload) is { } frame)
                 Post(() => { LightingFrame = frame; LightingFrameUpdated?.Invoke(); });
+            else if (e.Name == Events.Profiles && CefiroJson.FromElement<ProfilesStateDto>(e.Payload) is { } profiles)
+                Post(() => OnProfiles(profiles));
         };
     }
 
@@ -80,6 +82,11 @@ public sealed partial class CefiroSession : ObservableObject, IAsyncDisposable
     public FanFrameDto? FanFrame { get; private set; }
     public LightingStateDto? Lighting { get; private set; }
     public LightingFrameDto? LightingFrame { get; private set; }
+    public ProfilesStateDto? Profiles { get; private set; }
+    public ServiceSettingsDto? ServiceSettings { get; private set; }
+
+    /// <summary>Han cambiado los perfiles o el perfil activo.</summary>
+    public event Action? ProfilesChanged;
 
     /// <summary>Se ha cargado (o recargado) el catálogo y la configuración.</summary>
     public event Action? Loaded;
@@ -139,11 +146,14 @@ public sealed partial class CefiroSession : ObservableObject, IAsyncDisposable
             try { FanSettings = await Api.GetFanSettingsAsync().ConfigureAwait(true); } catch (IpcRemoteException) { }
             try { Lighting = await Api.CallAsync<LightingStateDto>(Methods.GetLighting, null).ConfigureAwait(true); } catch (IpcRemoteException) { }
             try { Status = await Api.GetStatusAsync().ConfigureAwait(true); } catch (IpcRemoteException) { }
+            try { Profiles = await Api.CallAsync<ProfilesStateDto>(Methods.GetProfiles, null).ConfigureAwait(true); } catch (IpcRemoteException) { }
+            try { ServiceSettings = await Api.CallAsync<ServiceSettingsDto>(Methods.GetSettings, null).ConfigureAwait(true); } catch (IpcRemoteException) { }
 
             IsLoaded = true;
             Loaded?.Invoke();
             FanSettingsChanged?.Invoke();
             LightingChanged?.Invoke();
+            ProfilesChanged?.Invoke();
         }
         catch (Exception)
         {
@@ -201,6 +211,54 @@ public sealed partial class CefiroSession : ObservableObject, IAsyncDisposable
     {
         Lighting = await Api.CallAsync<LightingStateDto>(Methods.GetLighting, null).ConfigureAwait(true);
         LightingChanged?.Invoke();
+    }
+
+    // ------------------------------------------------------------------ perfiles
+
+    private void OnProfiles(ProfilesStateDto state)
+    {
+        var activeChanged = state.ActiveProfileId != Profiles?.ActiveProfileId || state.ActivatedBy != Profiles?.ActivatedBy;
+        Profiles = state;
+        ProfilesChanged?.Invoke();
+
+        // Al activarse un perfil cambian los ventiladores y las luces: se recargan.
+        if (activeChanged)
+            _ = ReloadSettingsAsync();
+    }
+
+    private async Task ReloadSettingsAsync()
+    {
+        try
+        {
+            FanSettings = await Api.GetFanSettingsAsync().ConfigureAwait(true);
+            FanSettingsChanged?.Invoke();
+            await RefreshLightingAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is IpcRemoteException or InvalidOperationException or IOException or OperationCanceledException)
+        {
+            // Se recargará en la próxima reconexión.
+        }
+    }
+
+    private ProfilesStateDto Apply(ProfilesStateDto state)
+    {
+        OnProfiles(state);
+        return state;
+    }
+
+    public async Task<ProfilesStateDto> SaveProfileAsync(ProfileDto profile, bool captureCurrent) =>
+        Apply(await Api.CallAsync<ProfilesStateDto>(Methods.SaveProfile, new SaveProfileRequest(profile, captureCurrent)).ConfigureAwait(true));
+
+    public async Task<ProfilesStateDto> DeleteProfileAsync(string id) =>
+        Apply(await Api.CallAsync<ProfilesStateDto>(Methods.DeleteProfile, new ProfileIdRequest(id)).ConfigureAwait(true));
+
+    public async Task<ProfilesStateDto> ActivateProfileAsync(string id) =>
+        Apply(await Api.CallAsync<ProfilesStateDto>(Methods.ActivateProfile, new ProfileIdRequest(id)).ConfigureAwait(true));
+
+    public async Task<ServiceSettingsDto> SaveServiceSettingsAsync(ServiceSettingsDto settings)
+    {
+        ServiceSettings = await Api.CallAsync<ServiceSettingsDto>(Methods.SetSettings, settings).ConfigureAwait(true);
+        return ServiceSettings;
     }
 
     public async ValueTask DisposeAsync()

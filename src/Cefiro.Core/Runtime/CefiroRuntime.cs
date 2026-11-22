@@ -62,6 +62,8 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
 
         RegisterFanRoutes();
         RegisterLightingRoutes();
+        RegisterProfileRoutes();
+        LoadProfiles();
     }
 
     public event EventHandler<IpcEvent>? EventPublished;
@@ -309,6 +311,8 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
 
         // Ventiladores y seguridad. Siempre se ejecuta, incluso con lecturas nulas.
         TickFans(timestamp);
+        CheckTemperatureWarnings();
+        MaybeScanPrograms();
 
         // Copia para el resto de hilos (iluminación, interfaz): el array del bucle no se comparte nunca.
         var snapshot = (float?[])_values.Clone();

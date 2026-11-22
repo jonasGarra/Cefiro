@@ -72,8 +72,25 @@ public sealed class TrayService : IDisposable
         _icon.ForceCreate(false);
     }
 
-    /// <summary>Menú "Perfiles" (lo rellena la Fase 5).</summary>
-    public MenuItem ProfilesMenu => _profilesMenu;
+    /// <summary>Rellena el menú "Perfiles" (marcando el activo y mostrando su atajo).</summary>
+    public void SetProfiles(IReadOnlyList<ProfileDto> profiles, string? activeId, Func<string, Task> activate)
+    {
+        _profilesMenu.Items.Clear();
+        foreach (var profile in profiles)
+        {
+            var item = new MenuItem
+            {
+                Header = profile.Name,
+                IsChecked = profile.Id == activeId,
+                InputGestureText = profile.Hotkey ?? "",
+            };
+            var id = profile.Id;
+            item.Click += async (_, _) => await activate(id);
+            _profilesMenu.Items.Add(item);
+        }
+
+        _profilesMenu.Visibility = profiles.Count > 0 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+    }
 
     public void SetTooltip(string text) => _icon.ToolTipText = text;
 

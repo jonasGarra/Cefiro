@@ -20,8 +20,12 @@ public sealed partial class MainViewModel : ObservableObject
         Fans = new FansViewModel(session, settings);
         Lighting = new LightingViewModel(session, settings);
         Sensors = new SensorsViewModel(session);
+        Profiles = new ProfilesViewModel(session);
+        SettingsPage = new SettingsViewModel(session, settings);
+        AccentFollower = new Services.AccentFollower(session, settings);
 
         session.PropertyChanged += OnSessionChanged;
+        session.ProfilesChanged += UpdateProfileChip;
         IsDemo = session.IsDemo;
         UpdateConnection();
         Navigate(settings.Current.LastPage ?? "panel");
@@ -33,6 +37,12 @@ public sealed partial class MainViewModel : ObservableObject
     public FansViewModel Fans { get; }
     public LightingViewModel Lighting { get; }
     public SensorsViewModel Sensors { get; }
+    public ProfilesViewModel Profiles { get; }
+    public SettingsViewModel SettingsPage { get; }
+    public Services.AccentFollower AccentFollower { get; }
+
+    /// <summary>Perfil activo para el chip de la barra de título (null si no hay).</summary>
+    [ObservableProperty] public partial string? ActiveProfileText { get; set; }
 
     [ObservableProperty] public partial FrameworkElement? CurrentPage { get; set; }
     [ObservableProperty] public partial string CurrentKey { get; set; } = "panel";
@@ -56,9 +66,11 @@ public sealed partial class MainViewModel : ObservableObject
                 "ventiladores" => new FansPage { DataContext = Fans },
                 "iluminacion" => new LightingPage { DataContext = Lighting },
                 "sensores" => new SensorsPage { DataContext = Sensors },
+                "perfiles" => new ProfilesPage { DataContext = Profiles },
+                "ajustes" => new SettingsPage { DataContext = SettingsPage },
                 _ => new DashboardPage { DataContext = Dashboard },
             };
-            if (key is not ("ventiladores" or "iluminacion" or "sensores"))
+            if (key is not ("ventiladores" or "iluminacion" or "sensores" or "perfiles" or "ajustes"))
                 key = "panel";
             _pages[key] = page;
         }
@@ -71,6 +83,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void DismissConflicts() => HasConflicts = false;
+
+    private void UpdateProfileChip()
+    {
+        var state = Session.Profiles;
+        var active = state?.Profiles.FirstOrDefault(p => p.Id == state.ActiveProfileId);
+        ActiveProfileText = active is null ? null : state!.ActivatedBy is { } by ? $"{active.Name} · {by}" : active.Name;
+    }
 
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
     {
