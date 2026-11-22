@@ -123,6 +123,11 @@ try
             PrintLighting(resized);
             break;
 
+        case "rescan":
+            await api.CallAsync(Methods.RescanLighting, null);
+            Console.WriteLine("Pedido a OpenRGB que vuelva a detectar los dispositivos; en unos segundos se reenvían las luces.");
+            break;
+
         case "identify":
             // identify <texto del dispositivo> [zona] [led]
             var istate = await api.CallAsync<LightingStateDto>(Methods.GetLighting, null);

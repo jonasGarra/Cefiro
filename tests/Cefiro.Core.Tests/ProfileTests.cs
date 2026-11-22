@@ -128,6 +128,27 @@ public class ProfileTests
         Assert.Equal(before.Safety, fans.Safety);
     }
 
+    [Fact]
+    public async Task Rescan_request_asks_the_rgb_server_to_detect_devices_again_and_resends_everything()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var lights = new DemoLightingBackend();
+        await using var runtime = new CefiroRuntime(new DemoHardwareBackend(), lights, Options(() => new HashSet<string>()), NullLogger<CefiroRuntime>.Instance);
+        await using var api = new CefiroApi(new InProcessConnection(runtime, runtime));
+        await api.StartAsync(ct);
+        await runtime.StartAsync(ct);
+        await Task.Delay(500, ct);
+
+        var sentBefore = lights.SendCount;
+        await api.CallAsync(Methods.RescanLighting, null, ct);
+        for (var i = 0; i < 40 && lights.RescanCount == 0; i++)
+            await Task.Delay(50, ct);
+        await Task.Delay(600, ct);
+
+        Assert.Equal(1, lights.RescanCount);
+        Assert.True(lights.SendCount > sentBefore, "tras redetectar se tienen que reenviar los colores (aunque sean fijos)");
+    }
+
     [Theory]
     [InlineData("Juego.EXE", "juego.exe")]
     [InlineData(@"C:\Program Files\Steam\steam.exe", "steam.exe")]

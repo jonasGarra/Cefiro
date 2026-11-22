@@ -73,6 +73,13 @@
                 <Border Style="{StaticResource GlassCard}" Margin="0,0,9,0">
                     <StackPanel>
                         <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="12,5" Command="{Binding RescanCommand}"
+                                    ToolTip="Si alguna luz no hace caso: OpenRGB vuelve a buscar los dispositivos y Céfiro les reenvía el efecto. Se hace solo al volver de suspensión.">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="ArrowClockwise24" FontSize="15" Margin="0,0,6,0" />
+                                    <TextBlock Text="Volver a detectar" />
+                                </StackPanel>
+                            </Button>
                             <ui:SymbolIcon Symbol="LightbulbFilament24" FontSize="18" Foreground="{DynamicResource CefiroAccentBrush}" Margin="0,0,8,0" />
                             <TextBlock Style="{StaticResource SectionTitle}" Text="Tus dispositivos" VerticalAlignment="Center" />
                         </DockPanel>

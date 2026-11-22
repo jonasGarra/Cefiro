@@ -83,6 +83,26 @@ public sealed class LightingEngine : IAsyncDisposable
         Volatile.Write(ref _audioTime, _clock.Elapsed.TotalSeconds);
     }
 
+    /// <summary>
+    /// Vuelve a detectar los dispositivos y reenvía todo (tras suspensión/hibernación o a petición).
+    /// Si el servidor no responde a la redetección, al menos se rehace la lista y se reenvía el estado.
+    /// </summary>
+    public void RequestRescan(string reason) =>
+        _actions.Enqueue(async ct =>
+        {
+            _logger.LogInformation("Volviendo a detectar los dispositivos RGB ({Reason})", reason);
+            try
+            {
+                await _backend.RescanAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("El servidor RGB no ha podido redetectar: {Message}", ex.Message);
+            }
+
+            _devicesDirty = true;
+        });
+
     public void Identify(IdentifyRequest request) =>
         _actions.Enqueue(_ =>
         {

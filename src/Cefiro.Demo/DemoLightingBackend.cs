@@ -104,6 +104,16 @@ public sealed class DemoLightingBackend : ILightingBackend
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>Veces que se ha pedido volver a detectar (para las pruebas).</summary>
+    public int RescanCount { get; private set; }
+
+    public Task RescanAsync(CancellationToken cancellationToken)
+    {
+        RescanCount++;
+        DevicesChanged?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
     public Task ResizeZoneAsync(LightDevice device, int zoneIndex, int ledCount, CancellationToken cancellationToken)
     {
         lock (_gate)

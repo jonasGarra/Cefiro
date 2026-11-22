@@ -1000,6 +1000,27 @@ public sealed partial class LightingViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// "Las luces no hacen caso": OpenRGB vuelve a detectar los dispositivos y Céfiro reenvía todo.
+    /// (El servicio ya lo hace solo al volver de suspensión o hibernación.)
+    /// </summary>
+    [RelayCommand]
+    private async Task Rescan()
+    {
+        try
+        {
+            StatusText = "Volviendo a detectar los dispositivos…";
+            await _session.Api.CallAsync(Methods.RescanLighting, null);
+            await Task.Delay(5000);
+            await _session.RefreshLightingAsync();
+        }
+        catch (Exception ex)
+        {
+            UiLog.Error("No se pudo volver a detectar los dispositivos RGB", ex);
+            ErrorText = $"No se pudo volver a detectar: {ex.Message}";
+        }
+    }
+
     [RelayCommand]
     private async Task Identify(object? item)
     {

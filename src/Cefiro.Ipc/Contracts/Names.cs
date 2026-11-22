@@ -29,6 +29,7 @@ public static class Methods
     public const string ResizeZone = "lighting.zone.resize";
     public const string IdentifyLeds = "lighting.identify";
     public const string AudioSpectrum = "lighting.audio";
+    public const string RescanLighting = "lighting.rescan";
 
     public const string GetProfiles = "profiles.get";
     public const string SaveProfile = "profiles.save";

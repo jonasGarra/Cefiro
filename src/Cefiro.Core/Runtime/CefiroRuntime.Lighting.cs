@@ -46,6 +46,13 @@ public sealed partial class CefiroRuntime
             return Task.FromResult<object?>(null);
         });
 
+        Route<object, object?>(Methods.RescanLighting, (_, _) =>
+        {
+            (_lightingEngine ?? throw new InvalidOperationException("La iluminación todavía se está iniciando."))
+                .RequestRescan("pedido desde la interfaz");
+            return Task.FromResult<object?>(null);
+        });
+
         Route<AudioSpectrumDto, object?>(Methods.AudioSpectrum, (request, _) =>
         {
             if (request is { Bands.Length: > 0 and <= 64 } spectrum && float.IsFinite(spectrum.Level))

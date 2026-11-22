@@ -55,6 +55,13 @@ public interface ILightingBackend : IAsyncDisposable
 
     Task ResizeZoneAsync(LightDevice device, int zoneIndex, int ledCount, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Pide al servidor que vuelva a detectar los dispositivos (reabre sus conexiones USB/SMBus). Hace falta
+    /// tras salir de suspensión o de hibernación: el controlador USB de la placa se reinicia y el servidor se
+    /// queda hablando con un dispositivo que ya no existe. Al terminar llega <see cref="DevicesChanged"/>.
+    /// </summary>
+    Task RescanAsync(CancellationToken cancellationToken);
+
     /// <summary>Envíos todavía sin confirmar (para no saturar dispositivos lentos).</summary>
     int PendingUpdates(LightDevice device);
 }

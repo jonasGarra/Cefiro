@@ -46,6 +46,9 @@ public sealed class OpenRgbLightingBackend(ILogger<OpenRgbLightingBackend> logge
         _client = client;
     }
 
+    public async Task RescanAsync(CancellationToken cancellationToken) =>
+        await Client().RescanDevicesAsync(cancellationToken).ConfigureAwait(false);
+
     public async Task<IReadOnlyList<LightDevice>> GetDevicesAsync(CancellationToken cancellationToken)
     {
         var client = Client();

@@ -156,9 +156,17 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
         TryOpenHardware();
         _firstOpenAttempt.TrySetResult();
 
+        var lastCycle = Environment.TickCount64;
         while (!_stopSignal.IsSet)
         {
             var cycleStart = clock.Elapsed;
+
+            // GetTickCount64 sigue contando durante la suspensión y la hibernación (también la del "inicio
+            // rápido" de Windows al apagar): un salto grande entre dos ciclos significa que el PC ha dormido.
+            var nowTicks = Environment.TickCount64;
+            if (nowTicks - lastCycle > ResumeGapMilliseconds)
+                OnResumedFromSleep(TimeSpan.FromMilliseconds(nowTicks - lastCycle));
+            lastCycle = nowTicks;
 
             RunQueuedActions();
 
@@ -196,6 +204,35 @@ public sealed partial class CefiroRuntime : IRequestHandler, IEventSource, IAsyn
 
         try { _backend.Dispose(); }
         catch (Exception ex) { _logger.LogError(ex, "Error cerrando el hardware"); }
+    }
+
+    /// <summary>Pausa del bucle (en ms) a partir de la cual se considera que el PC ha estado dormido.</summary>
+    private const long ResumeGapMilliseconds = 15_000;
+
+    /// <summary>
+    /// Vuelta de suspensión o hibernación. El chip de la placa y el controlador USB de las luces se han
+    /// reiniciado mientras el servicio seguía "vivo":
+    ///  - Ventiladores: se sueltan a la BIOS y en el siguiente ciclo se vuelven a tomar desde cero (si no,
+    ///    el chip podría quedarse con la configuración de la BIOS creyendo Céfiro que la controla él).
+    ///  - Luces: OpenRGB vuelve a detectar los dispositivos y se reenvía todo.
+    /// </summary>
+    private void OnResumedFromSleep(TimeSpan gap)
+    {
+        _logger.LogInformation("El PC vuelve de suspensión o hibernación ({Minutes:0} min sin actividad): se reaplican ventiladores y luces", gap.TotalMinutes);
+
+        if (_hardwareReady && _fanEngine is not null)
+        {
+            try
+            {
+                _fanEngine.ReleaseAll(_backend.FanOutputs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error soltando los ventiladores tras la suspensión");
+            }
+        }
+
+        _lightingEngine?.RequestRescan("vuelta de suspensión o hibernación");
     }
 
     private void TryOpenHardware()
